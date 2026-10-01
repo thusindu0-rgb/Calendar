@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Auth Portal</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    body.light-theme {
+      --bg-color: #f1f5f9;
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --input-bg: rgba(241, 245, 249, 0.8);
+      --border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-color);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+      animation: float 10s infinite alternate ease-in-out;
+    }
+
+    .orb-1 { width: 300px; height: 300px; background: #ec4899; top: 10%; left: 15%; }
+    .orb-2 { width: 350px; height: 350px; background: #8b5cf6; bottom: 10%; right: 15%; animation-delay: -5s; }
+    .orb-3 { width: 250px; height: 250px; background: #06b6d4; top: 40%; left: 50%; animation-delay: -2s; }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(30px, 50px) scale(1.1); }
+    }
+
+    .top-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    .control-btn, .lang-select {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .auth-card {
+      position: relative;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+      width: 400px;
+      z-index: 10;
+    }
+
+    .auth-card h2 {
+      color: var(--text-main);
+      font-size: 26px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .auth-card p.subtitle {
+      color: var(--text-sub);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .input-field {
+      margin-bottom: 20px;
+    }
+
+    .input-field input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 15px;
+      outline: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899);
+      background-size: 200% 200%;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+    }
+
+    .auth-links {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 22px;
+      font-size: 13px;
+    }
+
+    .auth-links a {
+      color: #38bdf8;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #notifModal {
+      position: fixed;
+      top: 20px;
+      right: -350px;
+      background: var(--card-bg);
+      border-left: 4px solid #38bdf8;
+      color: var(--text-main);
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      transition: right 0.4s ease;
+      font-size: 14px;
+      max-width: 300px;
+    }
+
+    #notifModal.active {
+      right: 20px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 30px;
+      border-radius: 20px;
+      width: 320px;
+      text-align: center;
+      color: var(--text-main);
+    }
+
+    .modal-box input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-main);
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="top-controls">
+    <button class="control-btn" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+    <select class="lang-select" onchange="changeLanguage(this.value)" id="langSelect">
+      <option value="si">සිංහල</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
+  <div id="notifModal">Notification Message</div>
+
+  <div class="modal-overlay" id="codeModal">
+    <div class="modal-box">
+      <h3 id="modalTitle">Verification Code</h3>
+      <p id="modalDesc" style="font-size: 13px; color: var(--text-sub); margin: 10px 0 15px;">කරුණාකර රහස් කේතය ඇතුළත් කරන්න</p>
+      <input type="text" id="verifyCodeInput" placeholder="Code">
+      <button class="btn-submit" onclick="verifyCode()">Verify</button>
+    </div>
+  </div>
+
+  <div class="auth-card" id="authCard">
+    <h2 id="cardTitle">ආයුබෝවන්!</h2>
+    <p class="subtitle" id="cardSubtitle">කරුණාකර ගිණුමට ඇතුළු වන්න</p>
+
+    <div class="input-field" id="usernameWrapper">
+      <input type="text" id="username" placeholder="Username" required>
+    </div>
+
+    <div class="input-field" id="passwordWrapper">
+      <input type="password" id="password" placeholder="Password" required>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="sendAuthRequest()">Login</button>
+
+    <div class="auth-links" id="authLinks">
+      <a onclick="openForgotModal()" id="forgotBtn">Forgot Password?</a>
+      <a onclick="toggleAuthMode()" id="toggleBtn">Sign Up</a>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPjkuvwHBY1hqMVRSQGqZupGZxLIhD8aii3sspy0GI44wzGLH8_EZmDkkhUtG0rShX/exec";
+
+    let currentMode = 'login';
+    let currentLang = 'si';
+
+    const translations = {
+      si: {
+        welcome: "ආයුබෝවන්!",
+        loginSub: "කරුණාකර ගිණුමට ඇතුළු වන්න",
+        signupTitle: "ලියාපදිංචිය",
+        signupSub: "නව ගිණුමක් සාදා ගන්න",
+        resetTitle: "Reset Password",
+        resetSub: "නව මුරපදයක් ඇතුළත් කරන්න",
+        loginBtn: "Login",
+        signupBtn: "Sign Up",
+        resetBtn: "Update Password",
+        forgotLink: "Forgot Password?",
+        signupLink: "Sign Up",
+        loginLink: "Login",
+        backLogin: "Back to Login",
+        modalTitle: "Verification Code",
+        modalDesc: "කරුණාකර රහස් කේතය ඇතුළත් කරන්න",
+        fillError: "කරුණාකර සියලු විස්තර ඇතුළත් කරන්න!",
+        processing: "ක්‍‍රියාත්මක වෙමින් පවතී...",
+        codeSuccess: "කේතය නිවැරදියි! දැන් නව මුරපදය ඇතුළත් කරන්න.",
+        codeError: "ඇතුළත් කළ කේතය වැරදියි!"
+      },
+      en: {
+        welcome: "Welcome Back!",
+        loginSub: "Please login to your account",
+        signupTitle: "Create Account",
+        signupSub: "Sign up for a new account",
+        resetTitle: "Reset Password",
+        resetSub: "Enter your new password below",
+        loginBtn: "Login",
+        signupBtn: "Sign Up",
+        resetBtn: "Update Password",
+        forgotLink: "Forgot Password?",
+        signupLink: "Sign Up",
+        loginLink: "Login",
+        backLogin: "Back to Login",
+        modalTitle: "Verification Code",
+        modalDesc: "Please enter the verification code",
+        fillError: "Please fill in all fields!",
+        processing: "Processing...",
+        codeSuccess: "Code verified! Enter your new password.",
+        codeError: "Invalid Verification Code!"
+      }
+    };
+
+    window.onload = function() {
+      const savedUser = localStorage.getItem("loggedInUser");
+      if (savedUser) {
+        window.location.href = "index.html";
+      }
+    };
+
+    function notify(message, isError = false) {
+      const modal = document.getElementById("notifModal");
+      modal.innerText = message;
+      modal.style.borderLeftColor = isError ? "#ef4444" : "#10b981";
+      modal.classList.add("active");
+      setTimeout(() => modal.classList.remove("active"), 4000);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light-theme");
+      const isLight = document.body.classList.contains("light-theme");
+      document.getElementById("themeBtn").innerText = isLight ? "🌙 Dark" : "☀️ Light";
+    }
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      setMode(currentMode);
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const t = translations[currentLang];
+      
+      document.getElementById("usernameWrapper").style.display = "block";
+      document.getElementById("passwordWrapper").style.display = "block";
+      document.getElementById("authLinks").style.display = "flex";
+
+      if (mode === 'login') {
+        document.getElementById("cardTitle").innerText = t.welcome;
+        document.getElementById("cardSubtitle").innerText = t.loginSub;
+        document.getElementById("submitBtn").innerText = t.loginBtn;
+        document.getElementById("toggleBtn").innerText = t.signupLink;
+        document.getElementById("forgotBtn").style.display = "inline";
+      } else if (mode === 'signup') {
+        document.getElementById("cardTitle").innerText = t.signupTitle;
+        document.getElementById("cardSubtitle").innerText = t.signupSub;
+        document.getElementById("submitBtn").innerText = t.signupBtn;
+        document.getElementById("toggleBtn").innerText = t.loginLink;
+        document.getElementById("forgotBtn").style.display = "none";
+      } else if (mode === 'forgot') {
+        document.getElementById("cardTitle").innerText = t.resetTitle;
+        document.getElementById("cardSubtitle").innerText = t.resetSub;
+        document.getElementById("submitBtn").innerText = t.resetBtn;
+        document.getElementById("toggleBtn").innerText = t.backLogin;
+        document.getElementById("forgotBtn").style.display = "none";
+      }
+    }
+
+    function toggleAuthMode() {
+      setMode(currentMode === 'login' ? 'signup' : 'login');
+    }
+
+    function openForgotModal() {
+      const t = translations[currentLang];
+      document.getElementById("modalTitle").innerText = t.modalTitle;
+      document.getElementById("modalDesc").innerText = t.modalDesc;
+      document.getElementById("codeModal").classList.add("active");
+    }
+
+    function verifyCode() {
+      const code = document.getElementById("verifyCodeInput").value.trim();
+      const t = translations[currentLang];
+      
+      if (code === "123") {
+        document.getElementById("codeModal").classList.remove("active");
+        document.getElementById("verifyCodeInput").value = "";
+        setMode('forgot');
+        notify(t.codeSuccess, false);
+      } else {
+        notify(t.codeError, true);
+      }
+    }
+
+    function sendAuthRequest() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value.trim();
+      const t = translations[currentLang];
+
+      if (!u || !p) {
+        notify(t.fillError, true);
+        return;
+      }
+
+      notify(t.processing);
+
+      const payload = {
+        action: currentMode,
+        username: u,
+        password: p
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          notify(data.message, false);
+          
+          if (currentMode === 'login') {
+            localStorage.setItem("loggedInUser", u);
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 1000);
+          } else if (currentMode === 'signup' || currentMode === 'forgot') {
+            setMode('login');
+          }
+        } else {
+          notify(data.message, true);
+        }
+      })
+      .catch(err => {
+        notify("Server connectivity error!", true);
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>
